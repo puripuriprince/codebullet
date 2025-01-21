@@ -33,15 +33,22 @@ class ChatStorage {
     currentChat;
     currentVersionIndex;
     constructor() {
-        this.baseDir = path.join((0, project_files_1.getProjectRoot)(), MANICODE_DIR, CHATS_DIR);
+        this.baseDir = path.join((0, project_files_1.getProjectRoot)(), '.codebullet', 'chats');
         this.currentChat = this.createChat();
         this.currentVersionIndex = -1;
     }
     getCurrentChat() {
         return this.currentChat;
     }
-    addMessage(chat, message) {
-        chat.messages.push(message);
+    addMessage(chat, message, metadata = {}) {
+        const enhancedMessage = {
+            ...message,
+            metadata: {
+                ...metadata,
+                timestamp: new Date().toISOString()
+            }
+        };
+        chat.messages.push(enhancedMessage);
         chat.updatedAt = new Date().toISOString();
         this.saveChat(chat);
     }
@@ -67,7 +74,7 @@ class ChatStorage {
     saveFilesChanged(filesChanged) {
         let currentVersion = this.getCurrentVersion();
         if (!currentVersion) {
-            this.addNewFileState({});
+            this.addNewFileState({}, {});
             currentVersion = this.getCurrentVersion();
         }
         const newFilesChanged = filesChanged.filter((f) => !currentVersion.files[f]);
@@ -81,26 +88,36 @@ class ChatStorage {
             currentVersion.files = files;
         }
         else {
-            this.addNewFileState(files);
+            this.addNewFileState(files, {});
         }
     }
-    addNewFileState(files) {
+    addNewFileState(files, metadata = {}) {
         const newVersion = {
             files,
+            metadata: {
+                ...metadata,
+                timestamp: new Date().toISOString()
+            }
         };
         this.currentChat.fileVersions.push(newVersion);
         this.currentVersionIndex = this.currentChat.fileVersions.length - 1;
+        this.updateChat(this.currentChat);
     }
     createChat(messages = []) {
         const chat = {
             id: this.generateChatId(),
             messages,
             fileVersions: [],
+            metadata: {},
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
         this.saveChat(chat);
         return chat;
+    }
+    updateChat(chat) {
+        chat.updatedAt = new Date().toISOString();
+        this.saveChat(chat);
     }
     saveChat(chat) {
         const filePath = this.getFilePath(chat.id);
@@ -119,6 +136,14 @@ class ChatStorage {
     }
     getFilePath(chatId) {
         return path.join(this.baseDir, `${chatId}.json`);
+    }
+    getChatHistory() {
+        const chat = this.getCurrentChat();
+        return {
+            messages: chat.messages,
+            metadata: chat.metadata,
+            fileVersions: chat.fileVersions
+        };
     }
 }
 exports.ChatStorage = ChatStorage;

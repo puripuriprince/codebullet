@@ -283,7 +283,7 @@ class CLI {
                 (1000 * 60 * 60 * 24)));
             console.log(`${Math.max(0, this.client.limit - this.client.usage)} / ${this.client.limit} credits remaining. Renews in ${(0, string_1.pluralize)(daysUntilReset, 'day')}.`);
         }
-        console.log((0, picocolors_1.green)('Codebuff out!'));
+        console.log((0, picocolors_1.green)('Codebullet out!'));
         process.exit(0);
     }
     handleEscKey() {
@@ -496,7 +496,7 @@ class CLI {
                 this.stopLoadingAnimation();
                 // Handle model name display for both OpenRouter and regular cases
                 const modelDisplay = model ? ` [${model}]` : '';
-                process.stdout.write((0, picocolors_1.green)((0, picocolors_1.underline)('\nCodebuff') + modelDisplay + ':') + ' ');
+                process.stdout.write((0, picocolors_1.green)((0, picocolors_1.underline)('\nCodebullet') + modelDisplay + ':') + ' ');
             }
         );
         

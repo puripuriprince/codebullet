@@ -1,12 +1,12 @@
 {
-  "name": "codebuff",
-  "version": "1.0.143",
-  "description": "AI dev assistant",
+  "name": "codebullet",
+  "version": "1.0.0",
+  "description": "AI-powered coding assistant",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "codebuff": "dist/index.js"
+    "codebullet": "./dist/index.js"
   },
   "scripts": {
     "prebuild": "bun run with-env -- bun clean && cd ../common && bun run build && cd ../packages/code-map && bun run build",
@@ -18,7 +18,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "test": "jest",
     "start-js": "bun run with-env -- node dist/index.js ..",
-    "start": "bun run with-env -- ts-node src/index.ts .. --git stage",
+    "start": "node dist/index.js",
     "start-dir": "bun run with-env -- ts-node src/index.ts",
     "with-env": "env-cmd -f ./loadEnv.js",
     "start-manifold": "bun run with-env -- ts-node src/index.ts ../../manifold",
@@ -28,7 +28,8 @@
     "start-nushell": "bun run with-env -- ts-node src/index.ts ../test/__mock-projects__/nushell",
     "start-prod": "bun run with-env -- ts-node src/index.ts",
     "typecheck-this-package": "tsc --noEmit && tsc-alias",
-    "typecheck": "bun run --cwd ../common build && bun run --cwd ../packages/code-map build && bun run typecheck-this-package"
+    "typecheck": "bun run --cwd ../common build && bun run --cwd ../packages/code-map build && bun run typecheck-this-package",
+    "watch": "tsc -w"
   },
   "files": [
     "dist",

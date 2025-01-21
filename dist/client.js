@@ -42,6 +42,7 @@ const ts_pattern_1 = require("ts-pattern");
 const fingerprint_1 = require("./fingerprint");
 const git_1 = require("./common/util/git");
 const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1';
+const chat_storage_1 = require("./chat-storage");
 
 // Add utility function for JSON formatting
 const formatJsonResponse = (data) => {
@@ -84,29 +85,11 @@ class Client {
         this.costMode = costMode;
         this.git = git;
         this.openRouter = openRouter;
+        this.eventCallbacks = new Map();
         
+        // Create enhanced mock websocket for OpenRouter
         if (this.openRouter) {
-            // Create mock websocket client for OpenRouter
-            this.webSocket = {
-                connect: async () => {},
-                sendAction: async (action) => {
-                    if (action.type === 'user-input') {
-                        // Handle OpenRouter API call
-                        this.handleOpenRouterRequest(action);
-                    }
-                },
-                subscribe: (event, callback) => {
-                    // Store callbacks for our custom event handling
-                    if (!this.eventCallbacks) this.eventCallbacks = new Map();
-                    if (!this.eventCallbacks.has(event)) {
-                        this.eventCallbacks.set(event, new Set());
-                    }
-                    this.eventCallbacks.get(event).add(callback);
-                    return () => {
-                        this.eventCallbacks.get(event).delete(callback);
-                    };
-                }
-            };
+            this.webSocket = this.createOpenRouterWebSocket();
         } else {
             this.webSocket = new websocket_client_1.APIRealtimeClient(websocketUrl, onWebSocketError, onWebSocketReconnect);
         }
@@ -116,6 +99,124 @@ class Client {
         this.getFingerprintId();
         this.returnControlToUser = returnControlToUser;
     }
+
+    createOpenRouterWebSocket() {
+        return {
+            connect: async () => {
+                console.log('[DEBUG] Mock WebSocket connected');
+                // Handle init action
+                this.eventCallbacks.get('init')?.forEach(callback => callback());
+            },
+            sendAction: async (action) => {
+                switch (action.type) {
+                    case 'user-input':
+                        await this.handleOpenRouterRequest(action);
+                        break;
+                    case 'stop-response':
+                        this.handleStopResponse();
+                        break;
+                    case 'init':
+                        // Handle init silently
+                        break;
+                    case 'response-chunk':
+                        // Handle response chunks internally
+                        break;
+                    case 'response-complete':
+                        // Handle response complete internally
+                        break;
+                    default:
+                        console.log('[DEBUG] Unhandled action type:', action.type);
+                }
+            },
+            subscribe: (event, callback) => {
+                if (!this.eventCallbacks.has(event)) {
+                    this.eventCallbacks.set(event, new Set());
+                }
+                this.eventCallbacks.get(event).add(callback);
+                return () => {
+                    this.eventCallbacks.get(event).delete(callback);
+                };
+            },
+            disconnect: () => {
+                console.log('[DEBUG] Mock WebSocket disconnected');
+            }
+        };
+    }
+
+    handleError(error, userInputId) {
+        console.error('[ERROR]', error);
+        
+        // Notify all error subscribers
+        this.eventCallbacks.get('action-error')?.forEach(callback => {
+            callback({
+                message: error.message,
+                userInputId,
+                type: 'error',
+                details: {
+                    timestamp: new Date().toISOString(),
+                    model: this.openRouter?.model,
+                    errorType: error.name,
+                    application: 'codebullet'
+                }
+            });
+        });
+
+        // Log error to chat history
+        const errorMessage = {
+            role: 'system',
+            content: `Error: ${error.message}`,
+            metadata: {
+                error: true,
+                timestamp: new Date().toISOString(),
+                model: this.openRouter?.model
+            }
+        };
+        this.chatStorage.addMessage(this.chatStorage.getCurrentChat(), errorMessage);
+    }
+
+    handleStopResponse() {
+        this.eventCallbacks.get('response-stopped')?.forEach(callback => {
+            callback({
+                timestamp: new Date().toISOString(),
+                model: this.openRouter?.model
+            });
+        });
+    }
+
+    // Enhanced response handling with retries
+    async makeOpenRouterRequest(endpoint, options, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(`${OPENROUTER_API_BASE}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        ...options.headers,
+                        'Authorization': `Bearer ${this.openRouter.key}`,
+                        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL,
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}\n${errorText}`);
+                }
+
+                return response;
+            } catch (error) {
+                if (i === retries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+            }
+        }
+    }
+
+    // Add method to handle response cleanup
+    cleanup() {
+        this.eventCallbacks.clear();
+        if (this.openRouter) {
+            console.log('[DEBUG] Cleaning up OpenRouter session');
+        }
+    }
+
     initFileVersions(projectFileContext) {
         const { knowledgeFiles } = projectFileContext;
         this.fileContext = projectFileContext;
@@ -425,6 +526,14 @@ class Client {
                     throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
                 }
 
+                // Add metadata about the model to the chat
+                currentChat.metadata = {
+                    ...currentChat.metadata,
+                    model: this.openRouter.model,
+                    provider: 'openrouter'
+                };
+                this.chatStorage.updateChat(currentChat);
+
                 // Send initial action to websocket to set up streaming
                 this.webSocket.sendAction({
                     type: 'user-input',
@@ -606,42 +715,39 @@ class Client {
         });
     }
     async handleOpenRouterRequest(action) {
-        console.log('[DEBUG] Handling OpenRouter request');
-        const { userInputId, messages } = action;
+        const { userInputId, messages, fileContext } = action;
+        const currentChat = this.chatStorage.getCurrentChat();
 
         try {
-            const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
+            const messagesWithContext = messages.map(m => ({
+                role: m.role,
+                content: m.role === 'user' 
+                    ? `${fileContext ? `Project Context:\n${JSON.stringify(fileContext, null, 2)}\n\n` : ''}${m.content}`
+                    : m.content
+            }));
+
+            const response = await this.makeOpenRouterRequest('/chat/completions', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.openRouter.key}`,
-                    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL,
-                },
                 body: JSON.stringify({
                     model: this.openRouter.model,
-                    messages: messages.map(m => ({
-                        role: m.role,
-                        content: m.content
-                    })),
+                    messages: messagesWithContext,
                     stream: true
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
-            }
-
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let buffer = '';
             let isFirstChunk = true;
+            let responseBuffer = '';
 
-            // Process the stream
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
 
                 for (const line of lines) {
                     if (!line.trim() || !line.startsWith('data: ')) continue;
@@ -655,34 +761,32 @@ class Client {
                         
                         if (content) {
                             if (isFirstChunk) {
-                                // Trigger stream start callback with empty chunk
-                                this.eventCallbacks.get('response-chunk').forEach(callback => {
+                                this.eventCallbacks.get('stream-start')?.forEach(callback => {
                                     callback({ 
-                                        userInputId, 
-                                        chunk: '', 
-                                        // Add model name to be used in the prefix
+                                        userInputId,
                                         model: this.openRouter.model 
                                     });
                                 });
                                 isFirstChunk = false;
                             }
-                            // Send chunk through our event system
-                            this.eventCallbacks.get('response-chunk').forEach(callback => {
+                            
+                            responseBuffer += content;
+                            this.eventCallbacks.get('response-chunk')?.forEach(callback => {
                                 callback({ userInputId, chunk: content });
                             });
                         }
                     } catch (e) {
-                        console.error('[DEBUG] Error parsing JSON:', e);
+                        console.error('[DEBUG] JSON parsing error:', e);
                     }
                 }
             }
 
             // Send completion event
-            this.eventCallbacks.get('response-complete').forEach(callback => {
+            this.eventCallbacks.get('response-complete')?.forEach(callback => {
                 callback({
                     type: 'response-complete',
                     userInputId,
-                    response: '',
+                    response: responseBuffer,
                     changes: [],
                     changesAlreadyApplied: [],
                     addedFileVersions: [],
@@ -693,9 +797,56 @@ class Client {
 
         } catch (error) {
             console.error('[DEBUG] OpenRouter error:', error);
-            this.eventCallbacks.get('action-error')?.forEach(callback => {
-                callback({ message: error.message });
-            });
+            this.handleError(error, userInputId);
+        }
+    }
+    async handleCommand(command, args) {
+        // Handle commands consistently for both OpenRouter and regular mode
+        switch (command) {
+            case '/clear':
+                this.chatStorage = new chat_storage_1.ChatStorage();
+                return { success: true, message: 'Chat history cleared.' };
+                
+            case '/undo':
+                if (this.chatStorage.navigateVersion('undo')) {
+                    const files = this.chatStorage.getCurrentVersion()?.files ?? {};
+                    (0, project_files_1.setFiles)(files);
+                    return { success: true, message: 'Undid last changes.' };
+                }
+                return { success: false, message: 'Nothing to undo.' };
+                
+            case '/redo':
+                if (this.chatStorage.navigateVersion('redo')) {
+                    const files = this.chatStorage.getCurrentVersion()?.files ?? {};
+                    (0, project_files_1.setFiles)(files);
+                    return { success: true, message: 'Redid last changes.' };
+                }
+                return { success: false, message: 'Nothing to redo.' };
+                
+            case '/save':
+                const saveName = args[0] || new Date().toISOString();
+                this.chatStorage.saveCurrentState(saveName);
+                return { success: true, message: `Saved current state as "${saveName}"` };
+                
+            case '/load':
+                const loadName = args[0];
+                if (!loadName) {
+                    return { success: false, message: 'Please specify a save name to load.' };
+                }
+                if (this.chatStorage.loadState(loadName)) {
+                    return { success: true, message: `Loaded state "${loadName}"` };
+                }
+                return { success: false, message: `No save found with name "${loadName}"` };
+                
+            case '/diff':
+                const changes = (0, project_files_1.getChangesSinceLastFileVersion)(
+                    this.chatStorage.getCurrentVersion()?.files ?? {}
+                );
+                return { 
+                    success: true, 
+                    message: 'Current changes:',
+                    data: changes
+                };
         }
     }
 }
