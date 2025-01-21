@@ -33,7 +33,7 @@ class ChatStorage {
     currentChat;
     currentVersionIndex;
     constructor() {
-        this.baseDir = path.join((0, project_files_1.getProjectRoot)(), '.codebullet', 'chats');
+        this.baseDir = path.join((0, project_files_1.getProjectRoot)(), '.manicode', 'chats');
         this.currentChat = this.createChat();
         this.currentVersionIndex = -1;
     }
