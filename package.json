@@ -1,0 +1,75 @@
+{
+  "name": "codebuff",
+  "version": "1.0.143",
+  "description": "AI dev assistant",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "codebuff": "dist/index.js"
+  },
+  "scripts": {
+    "prebuild": "bun run with-env -- bun clean && cd ../common && bun run build && cd ../packages/code-map && bun run build",
+    "build": "tsc && tsc-alias",
+    "postbuild": "mkdir -p dist/common && cp -r ../common/dist/* dist/common && mkdir -p dist/code-map && cp -r ../packages/code-map/dist/* dist/code-map && tsc-alias",
+    "clean": "rm -rf dist && (rm tsconfig.tsbuildinfo || true)",
+    "prepublishOnly": "bun run build && bun run clean-package.js",
+    "postpublish": "echo \"const fs=require('fs');fs.copyFileSync('temp.package.json','package.json');fs.unlinkSync('temp.package.json');\" | bun run -",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "test": "jest",
+    "start-js": "bun run with-env -- node dist/index.js ..",
+    "start": "bun run with-env -- ts-node src/index.ts .. --git stage",
+    "start-dir": "bun run with-env -- ts-node src/index.ts",
+    "with-env": "env-cmd -f ./loadEnv.js",
+    "start-manifold": "bun run with-env -- ts-node src/index.ts ../../manifold",
+    "start-litestar": "bun run with-env -- ts-node src/index.ts ../test/__mock-projects__/litestar",
+    "start-jpcsp": "bun run with-env -- ts-node src/index.ts ../test/__mock-projects__/jpcsp",
+    "start-vscode": "bun run with-env -- ts-node src/index.ts ../test/__mock-projects__/vscode",
+    "start-nushell": "bun run with-env -- ts-node src/index.ts ../test/__mock-projects__/nushell",
+    "start-prod": "bun run with-env -- ts-node src/index.ts",
+    "typecheck-this-package": "tsc --noEmit && tsc-alias",
+    "typecheck": "bun run --cwd ../common build && bun run --cwd ../packages/code-map build && bun run typecheck-this-package"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@types/diff": "5.2.1",
+    "@vscode/ripgrep": "1.15.9",
+    "axios": "1.7.4",
+    "cheerio": "1.0.0",
+    "diff": "5.2.0",
+    "env-cmd": "^10.1.0",
+    "ignore": "5.3.2",
+    "lodash": "*",
+    "nanoid": "5.0.7",
+    "picocolors": "1.1.0",
+    "systeminformation": "5.23.4",
+    "tree-sitter": "0.21.1",
+    "tree-sitter-c": "0.23.0",
+    "tree-sitter-c-sharp": "0.23.0",
+    "tree-sitter-cpp": "0.23.0",
+    "tree-sitter-go": "0.23.1",
+    "tree-sitter-java": "0.23.2",
+    "tree-sitter-javascript": "0.23.0",
+    "tree-sitter-php": "0.23.2",
+    "tree-sitter-python": "0.23.2",
+    "tree-sitter-ruby": "0.23.0",
+    "tree-sitter-rust": "0.23.0",
+    "tree-sitter-typescript": "0.23.0",
+    "ts-pattern": "5.3.1",
+    "ws": "8.18.0",
+    "zod": "3.23.8"
+  },
+  "optionalDependencies": {
+    "@homebridge/node-pty-prebuilt-multiarch": "0.12.0-beta.5"
+  },
+  "trustedDependencies": [
+    "@homebridge/node-pty-prebuilt-multiarch",
+    "@vscode/ripgrep"
+  ]
+}
