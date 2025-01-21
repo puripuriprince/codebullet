@@ -58,7 +58,7 @@ Some have said every change should be paired with a unit test. In 2024, every ch
 
 1. Create a `knowledge.md` file and collect specific points of advice. The assistant will use this knowledge to improve its responses.
 2. Type `undo` or `redo` to revert or reapply file changes from the conversation.
-3. Press `Esc` or `Ctrl+C` while Codebuff is generating a response to stop it.
+3. Press `Esc` or `Ctrl+C` while Codebullet is generating a response to stop it.
 
 ## Troubleshooting
 
