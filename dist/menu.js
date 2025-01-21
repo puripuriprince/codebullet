@@ -66,6 +66,7 @@ ${colorizeRandom('██║     ')}${colorizeRandom('██║   ██║')}${c
 ${colorizeRandom('╚██████╗')}${colorizeRandom('╚██████╔╝')}${colorizeRandom('██████╔╝')}${colorizeRandom('███████╗')}${colorizeRandom('██████╔╝')}${colorizeRandom('╚██████╔╝')}${colorizeRandom('██████║ ')}${colorizeRandom('██████║ ')}${colorizeRandom('███████╗')}${colorizeRandom('   ██║   ')}
 ${colorizeRandom(' ╚═════╝')}${colorizeRandom(' ╚═════╝ ')}${colorizeRandom('╚═════╝ ')}${colorizeRandom('╚══════╝')}${colorizeRandom('╚═════╝ ')}${colorizeRandom(' ╚═════╝ ')}${colorizeRandom('╚═════╝ ')}${colorizeRandom('╚═════╝ ')}${colorizeRandom('╚══════╝')}${colorizeRandom('   ╚═╝   ')}
 `);
+    console.log((0, picocolors_2.bold)((0, picocolors_2.green)("CODEBULLET is a fork of Codebuff, all credit goes to them frfr.")));
     console.log((0, picocolors_2.bold)((0, picocolors_2.green)("Welcome! I'm your AI coding assistant.")));
     console.log(`\nCodebuff will read and write files within your current directory (${(0, project_files_1.getProjectRoot)()}) and run commands in your terminal.`);
     console.log('\nASK CODEBUFF TO...');
@@ -86,6 +87,7 @@ ${colorizeRandom(' ╚═════╝')}${colorizeRandom(' ╚═════
     console.log('- Type "exit" or press Ctrl+C twice to exit Codebuff');
     console.log('- Type "diff" or "d" to show changes from the last assistant response');
     console.log('- Start codebuff with --lite for efficient, budget responses or --max for higher quality responses');
+    console.log('  --openrouter <model> <key>      Use a specific model through OpenRouter API');
     console.log(`- Redeem a referral code by simply pasting it here.`);
     console.log('-', (0, picocolors_2.bold)((0, picocolors_2.green)(`Refer new users and each of you will earn ${constants_1.CREDITS_REFERRAL_BONUS} credits per month: ${process.env.NEXT_PUBLIC_APP_URL}/referrals`)));
     console.log('\nAny files in .gitignore are not read by Codebuff. You can ignore further files with .codebuffignore');
