@@ -13,7 +13,7 @@ Note: Codebullet will run commands in your terminal as it deems necessary to ful
 To install Codebullet, run:
 
 ```bash
-npm install -g codebullet
+npm install -g .
 ```
 
 (Use `sudo` if you get a permission error.)
@@ -33,6 +33,7 @@ You can also control the cost/quality tradeoff with these flags:
 ```bash
 codebullet --lite  # Budget mode for more econonmical responses
 codebullet --max   # Premium mode for higher quality responses (--o1 also works)
+codebullet --openrouter deepseek/deepseek-r1 yourrrrkeyyyyyy
 ```
 
 After running `codebullet`, simply chat with it to say what coding task you want done.
@@ -51,8 +52,6 @@ Our users regularly use Codebullet to implement new features, write unit tests, 
 To unlock the full benefits of modern LLMs, we recommend storing knowledge alongside your code. Add a `knowledge.md` file anywhere in your project to provide helpful context, guidance, and tips for the LLM as it performs tasks for you.
 
 Codebullet can fluently read and write files, so it will add knowledge as it goes. You don't need to write knowledge manually!
-
-Some have said every change should be paired with a unit test. In 2024, every change should come with a knowledge update!
 
 ## Tips
 
@@ -82,6 +81,5 @@ Make sure to uninstall your existing node program. Then get this executable:
 
 [Download the release .exe](https://github.com/coreybutler/nvm-windows/releases)
 
-## Feedback
 
-We value your input! Please email your feedback to `founders@codebullet.com`. Thank you for using Codebullet!
+Thank you for using Codebullet!
