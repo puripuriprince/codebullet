@@ -1,12 +1,4 @@
-# The most powerful coding agent
-
-Codebullet is a CLI tool that writes code for you.
-
-1. Run `codebullet` from your project directory
-2. Tell it what to do
-3. It will read and write to files and run commands to produce the code you want
-
-Note: Codebullet will run commands in your terminal as it deems necessary to fulfill your request.
+# Forking The most powerful coding agent
 
 ## Installation
 
