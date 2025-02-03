@@ -8,8 +8,6 @@ To install Codebullet, run:
 npm install -g .
 ```
 
-(Use `sudo` if you get a permission error.)
-
 ## Usage
 
 After installation, you can start Codebullet by running:
@@ -28,48 +26,9 @@ codebullet --max   # Premium mode for higher quality responses (--o1 also works)
 codebullet --openrouter deepseek/deepseek-r1 yourrrrkeyyyyyy
 ```
 
-After running `codebullet`, simply chat with it to say what coding task you want done.
-
-## Features
-
-- Understands your whole codebase
-- Creates and edits multiple files based on your request
-- Can run your tests or type checker or linter; can install packages
-- It's powerful: ask Codebullet to keep working until it reaches a condition and it will.
-
-Our users regularly use Codebullet to implement new features, write unit tests, refactor code,write scripts, or give advice.
-
-## Knowledge Files
-
-To unlock the full benefits of modern LLMs, we recommend storing knowledge alongside your code. Add a `knowledge.md` file anywhere in your project to provide helpful context, guidance, and tips for the LLM as it performs tasks for you.
-
-Codebullet can fluently read and write files, so it will add knowledge as it goes. You don't need to write knowledge manually!
-
-## Tips
-
-1. Create a `knowledge.md` file and collect specific points of advice. The assistant will use this knowledge to improve its responses.
-2. Type `undo` or `redo` to revert or reapply file changes from the conversation.
-3. Press `Esc` or `Ctrl+C` while Codebullet is generating a response to stop it.
-
-## Troubleshooting
-
-If you are getting permission errors during installation, try using sudo:
-
-```
-sudo npm install -g codebullet
-```
-
-Or, we recommend [installing node with a version manager](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm). See below.
-
-#### For Mac or Unix, use [nvm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm). Run:
-
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-```
-
 #### For Windows, use [nvm-windows](https://github.com/coreybutler/nvm-windows):
 
-Make sure to uninstall your existing node program. Then get this executable:
+
 
 [Download the release .exe](https://github.com/coreybutler/nvm-windows/releases)
 
